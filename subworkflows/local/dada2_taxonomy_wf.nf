@@ -57,18 +57,28 @@ workflow DADA2_TAXONOMY_WF {
         ASV_tax_name = "ASV_ITS_tax"
     }
 
-    //split sequences into chunks
+    // Split sequences into chunks
     ch_fasta
-        .splitFasta( by: val_dada_assign_chunksize, file: true )
+        .splitFasta(by: val_dada_assign_chunksize, file: true)
         .set { ch_fasta_chunks }
 
-    //DADA2 assignTaxonomy
-    DADA2_TAXONOMY ( ch_fasta_chunks, ch_assigntax, ".${ASV_tax_name}.${val_dada_ref_taxonomy}", taxlevels )
+    // Prepare channels for constant inputs
+    ch_assigntax      = Channel.value(path('your_database.fa')) // or however you're setting this
+    ch_outfile_suffix = Channel.value(".${ASV_tax_name}.${val_dada_ref_taxonomy}")
+    ch_taxlevels_val  = Channel.value(taxlevels)
+
+    // Combine chunked fasta with constant values
+    ch_fasta_chunks
+        .combine(ch_assigntax, ch_outfile_suffix, ch_taxlevels_val)
+        .set { ch_taxonomy_input }
+
+    // DADA2 assignTaxonomy per chunk
+    DADA2_TAXONOMY(ch_taxonomy_input)
     ch_versions_dada_taxonomy = ch_versions_dada_taxonomy.mix(DADA2_TAXONOMY.out.versions)
 
-    // collect all DADA2_TAXONOMY.out.tsv into one file
+    // Collect all DADA2_TAXONOMY.out.tsv into one file
     DADA2_TAXONOMY.out.tsv
-        .collectFile(name: ASV_tax_name+".${val_dada_ref_taxonomy}.tsv", newLine: false, cache: true, keepHeader: true, skip: 1, sort: true)
+        .collectFile(name: "${ASV_tax_name}.${val_dada_ref_taxonomy}.tsv", newLine: false, cache: true, keepHeader: true, skip: 1, sort: true)
         .set { ch_dada2_taxonomy_tsv }
     ch_dada2_taxonomy_tsv.subscribe{ file(it).copyTo("${params.outdir}/dada2") }
 
