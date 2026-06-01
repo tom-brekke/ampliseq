@@ -277,6 +277,7 @@ def validateInputParameters() {
         "coidb","coidb=221216",
         "greengenes2","greengenes2=2024.09",
         "gtdb","gtdb=R10-RS226","gtdb=R09-RS220","gtdb=R08-RS214","gtdb=R07-RS207","gtdb=R06-RS202","gtdb=R05-RS95",
+        "glosed","glosed=1.0.0",
         "midori2-co1","midori2-co1=gb250",
         "pr2","pr2=5.1.0","pr2=5.0.0","pr2=4.14.0","pr2=4.13.0",
         "rdp","rdp=18",

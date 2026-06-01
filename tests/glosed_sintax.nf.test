@@ -1,0 +1,28 @@
+nextflow_pipeline {
+
+    name "Test Workflow main.nf"
+    script "main.nf"
+    tag "test_glosed_sintax"
+    tag "pipeline"
+
+    name "Test pipeline"
+    script "../main.nf"
+    tag "pipeline"
+    profile "test_glosed_sintax"
+
+    test("-profile test_glosed_sintax") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert path("$outputDir/dada2/ASV_seqs.fasta").exists()
+            assert path("$outputDir/taxonomy/ASV_tax.glosed.tsv").exists() || path("$outputDir/taxonomy/ASV_tax.sintax.tsv").exists() || path("$outputDir/qiime2/taxonomy/taxonomy.tsv").exists()
+            assert path("$outputDir/SBDI/dna.tsv").exists()
+        }
+    }
+}
