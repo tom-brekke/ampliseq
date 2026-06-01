@@ -17,6 +17,7 @@ workflow DADA2_TAXONOMY_WF {
     take:
     ch_assigntax
     ch_addspecies
+    ch_shinfo_generated
     val_dada_ref_taxonomy
     ch_fasta
     ch_full_fasta
@@ -29,7 +30,11 @@ workflow DADA2_TAXONOMY_WF {
     // Set cutoff to use for SH assignment and path to SH taxonomy file
     if ( params.addsh ) {
         vsearch_cutoff = 0.985
-        ch_shinfo = channel.fromList(params.dada_ref_databases[params.dada_ref_taxonomy]["shfile"]).map { it -> file(it) }
+        if (params.dada_ref_databases[params.dada_ref_taxonomy]["shfile"]) {
+            ch_shinfo = channel.fromList(params.dada_ref_databases[params.dada_ref_taxonomy]["shfile"]).map { it -> file(it) }
+        } else {
+            ch_shinfo = ch_shinfo_generated
+        }
     }
 
     //cut taxonomy to expected amplicon

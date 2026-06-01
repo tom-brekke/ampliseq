@@ -296,18 +296,22 @@ def validateInputParameters() {
         }
     }
 
-    if (params.addsh && !params.dada_ref_databases[params.dada_ref_taxonomy]["shfile"]) {
+    def addsh_db = params.dada_ref_taxonomy ?: ""
+    def has_addsh_shfile = params.dada_ref_databases[addsh_db]?.get("shfile")
+    def has_addsh_generated_shinfo = addsh_db.startsWith("glosed")
+
+    if (params.addsh && !(has_addsh_shfile || has_addsh_generated_shinfo)) {
         def validDBs = ""
         params.dada_ref_databases.keySet().each { db ->
-            if (params.dada_ref_databases[db]["shfile"]) {
+            if (params.dada_ref_databases[db]["shfile"] || db.startsWith("glosed")) {
                 validDBs += " " + db
             }
         }
-        error("UNITE species hypothesis information is not available for the selected reference database, please use the option `--dada_ref_taxonomy` to select an appropriate database. Currently, the option `--addsh` can only be used together with the following UNITE reference databases:\n" + validDBs + ".")
+        error("Species hypothesis (SH) information is not available for the selected reference database, please use the option `--dada_ref_taxonomy` to select an appropriate database. Currently, the option `--addsh` can only be used together with the following SH-enabled reference databases:\n" + validDBs + ".")
     }
 
     if (params.addsh && params.cut_its == "none") {
-        log.warn "Adding UNITE species hypothesis (SH) assignments is only feasible for ITS sequences. Please use option `--cut_its` to find ITS regions in the ASV sequences, unless the given sequences are already cut to the ITS region.\n"
+        log.warn "Adding species hypothesis (SH) assignments is only feasible for ITS sequences. Please use option `--cut_its` to find ITS regions in the ASV sequences, unless the given sequences are already cut to the ITS region.\n"
     }
 
     // Error message for incompatible combination of --orf_start and --orf_end

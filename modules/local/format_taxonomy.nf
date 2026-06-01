@@ -13,6 +13,8 @@ process FORMAT_TAXONOMY {
     output:
     path( "*assignTaxonomy.fna*" ), emit: assigntax
     path( "*addSpecies.fna*")     , emit: addspecies
+    path( "*seq2sh.tsv.bz2" )     , optional: true, emit: seq2sh
+    path( "*SHs.tax.bz2" )        , optional: true, emit: shtax
     path( "ref_taxonomy.*.txt")   , emit: ref_tax_info
     path "versions.yml"           , emit: versions
 

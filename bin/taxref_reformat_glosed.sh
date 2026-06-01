@@ -79,6 +79,7 @@ extract_zip "$taxonomy_zip" | awk '
         next
     }
     {
+        id = $1
         kingdom = clean($8)
         phylum = clean($9)
         class_name = clean($10)
@@ -99,13 +100,29 @@ extract_zip "$taxonomy_zip" | awk '
         }
 
         taxonomy = kingdom ";" phylum ";" class_name ";" order ";" family ";" genus ";" species
-        print $1, taxonomy > "glosed.assign.tsv"
+        print id, taxonomy > "glosed.assign.tsv"
 
         if (genus != "" && species != "") {
-            print $1, genus " " species > "glosed.addspecies.tsv"
+            print id, genus " " species > "glosed.addspecies.tsv"
+        }
+
+        if (sh05 != "") {
+            print id, sh05, 0 > "glosed.seq2sh.tsv"
+            if (!(sh05 in seen_sh)) {
+                print sh05, 0, kingdom, phylum, class_name, order, family, genus, species > "glosed.SHs.tax"
+                seen_sh[sh05] = 1
+            }
         }
     }
 '
+
+if [ -s glosed.seq2sh.tsv ]; then
+    bzip2 -c glosed.seq2sh.tsv > glosed.seq2sh.tsv.bz2
+fi
+
+if [ -s glosed.SHs.tax ]; then
+    bzip2 -c glosed.SHs.tax > glosed.SHs.tax.bz2
+fi
 
 join -t "$(printf '\t')" glosed.assign.tsv glosed.seqs.tsv | awk '
     BEGIN {

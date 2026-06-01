@@ -319,6 +319,7 @@ workflow AMPLISEQ {
     // DADA2
     ch_dada_assigntax     = channel.empty()
     ch_dada_addspecies    = channel.empty()
+    ch_dada_shinfo        = channel.empty()
     ch_dada_ref_taxonomy  = channel.empty()
     val_dada_ref_taxonomy = "none"
     val_dada_taxlevels    = ""
@@ -719,10 +720,12 @@ workflow AMPLISEQ {
             ch_versions = ch_versions.mix(FORMAT_TAXONOMY.out.versions)
             ch_dada_assigntax = FORMAT_TAXONOMY.out.assigntax
             ch_dada_addspecies = FORMAT_TAXONOMY.out.addspecies
+            ch_dada_shinfo = FORMAT_TAXONOMY.out.seq2sh.mix(FORMAT_TAXONOMY.out.shtax)
         }
         DADA2_TAXONOMY_WF (
             ch_dada_assigntax,
             ch_dada_addspecies,
+            ch_dada_shinfo,
             val_dada_ref_taxonomy,
             ch_fasta,
             ch_full_fasta,

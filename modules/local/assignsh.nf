@@ -20,8 +20,14 @@ process ASSIGNSH {
 
     script:
     def args = task.ext.args ?: ''
+    def sh_info_list = sh_info instanceof List ? sh_info : [sh_info]
+    def sh_seq2sh = sh_info_list.find { file_item -> file_item.toString().toLowerCase().contains('seq2sh') } ?: sh_info_list[0]
+    def sh_tax = sh_info_list.find { file_item ->
+        def name = file_item.toString().toLowerCase()
+        name.contains('shs.tax') || name.contains('sh.tax')
+    } ?: (sh_info_list.size() > 1 ? sh_info_list[1] : sh_info_list[0])
     """
-    add_sh_to_taxonomy.py ${sh_info.join(' ')} $asvtable $blastfile $outtable $args
+    add_sh_to_taxonomy.py $sh_seq2sh $sh_tax $asvtable $blastfile $outtable $args
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
