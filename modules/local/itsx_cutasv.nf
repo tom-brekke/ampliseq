@@ -31,6 +31,18 @@ process ITSX_CUTASV {
         exit 1
     fi
 
+    # Generate a robust summary directly from FASTA counts.
+    total=$(grep -c '^>' "$fasta" || true)
+    kept=$(grep -c '^>' "$outfile" || true)
+    skipped=$(( total - kept ))
+    if [ "$skipped" -lt 0 ]; then
+        skipped=0
+    fi
+    echo "ITSx extraction summary" > ASV_ITS_seqs.summary.txt
+    echo "Number of sequences in input file: ${total:-0}" >> ASV_ITS_seqs.summary.txt
+    echo "Sequences detected as ITS by ITSx: ${kept:-0}" >> ASV_ITS_seqs.summary.txt
+    echo "Number of sequences skipped: ${skipped:-0}" >> ASV_ITS_seqs.summary.txt
+
     echo -e "ITSx\t$args" > ITSx.args.txt
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

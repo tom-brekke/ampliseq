@@ -67,18 +67,17 @@ process ITSXRUST_CUTASV {
         fi
     done
 
-    # Generate ITSx-compatible summary from ITSxRust QC JSON
-    if [ -f itsxrust_qc.json ]; then
-        total=\$(grep -o '"total_reads":[0-9]*' itsxrust_qc.json | grep -o '[0-9]*')
-        kept=\$(grep -o '"kept":[0-9]*' itsxrust_qc.json | grep -o '[0-9]*')
-        skipped=\$(grep -o '"skipped":[0-9]*' itsxrust_qc.json | grep -o '[0-9]*')
-        echo "ITSxRust extraction summary" > ASV_ITS_seqs.summary.txt
-        echo "Number of sequences in input file: \${total:-0}" >> ASV_ITS_seqs.summary.txt
-        echo "Sequences detected as ITS by ITSx: \${kept:-0}" >> ASV_ITS_seqs.summary.txt
-        echo "Number of sequences skipped: \${skipped:-0}" >> ASV_ITS_seqs.summary.txt
-    else
-        echo "ITSxRust: QC JSON not available" > ASV_ITS_seqs.summary.txt
+    # Generate a robust ITSx-compatible summary directly from FASTA counts.
+    total=$(grep -c '^>' "$fasta" || true)
+    kept=$(grep -c '^>' "$outfile" || true)
+    skipped=$(( total - kept ))
+    if [ "$skipped" -lt 0 ]; then
+        skipped=0
     fi
+    echo "ITSxRust extraction summary" > ASV_ITS_seqs.summary.txt
+    echo "Number of sequences in input file: ${total:-0}" >> ASV_ITS_seqs.summary.txt
+    echo "Sequences detected as ITS by ITSx: ${kept:-0}" >> ASV_ITS_seqs.summary.txt
+    echo "Number of sequences skipped: ${skipped:-0}" >> ASV_ITS_seqs.summary.txt
 
     # Validate that the expected output file exists and is non-empty
     if [ ! -s "$outfile" ]; then
