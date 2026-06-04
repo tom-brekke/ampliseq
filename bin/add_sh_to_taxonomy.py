@@ -51,7 +51,7 @@ def get_sh_for_match(seq2sh_table, match_name):
         print("WARNING: no SH reported for " + seq_id, file=sys.stderr)
         return ""
 
-    return str(new_sh)
+    return new_sh
 
 # Argument check
 if len(sys.argv) != 6:
@@ -110,7 +110,7 @@ for row in fh:
                     tax = list(shtax.loc[SH])
                 except KeyError:
                     print("WARNING: no taxonomy found for " + SH, file=sys.stderr)
-                    tax = [""] * num_ranks
+                    tax = [""] * (num_ranks + 1)
                 conf = m[1] / 100.0
         if SH != "":
             tax_list = tax[1 : num_ranks + 1] + [SH] + [conf]
