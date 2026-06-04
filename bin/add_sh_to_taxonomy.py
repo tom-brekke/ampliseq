@@ -17,6 +17,42 @@
 import sys
 import pandas as pd
 
+
+def extract_seq_id(match_name):
+    """Extract database sequence id from a vsearch match name."""
+    matchparts = match_name.split("|")
+    if len(matchparts) > 1 and matchparts[1] != "":
+        return matchparts[1]
+    # Some databases use plain IDs without pipe-delimited fields.
+    return match_name
+
+
+def get_sh_for_match(seq2sh_table, match_name):
+    """Return SH id for a match or empty string if unavailable."""
+    seq_id = extract_seq_id(match_name)
+    try:
+        seq_row = seq2sh_table.loc[seq_id]
+    except KeyError:
+        print("WARNING: " + seq_id + " not in seq2SH list", file=sys.stderr)
+        return ""
+
+    if isinstance(seq_row, pd.DataFrame):
+        if seq_row.shape[1] <= 1 or seq_row.shape[0] == 0:
+            print("WARNING: malformed seq2SH entry for " + seq_id, file=sys.stderr)
+            return ""
+        new_sh = seq_row.iloc[0, 1]
+    else:
+        if len(seq_row) <= 1:
+            print("WARNING: malformed seq2SH entry for " + seq_id, file=sys.stderr)
+            return ""
+        new_sh = seq_row.iloc[1]
+
+    if pd.isna(new_sh):
+        print("WARNING: no SH reported for " + seq_id, file=sys.stderr)
+        return ""
+
+    return str(new_sh)
+
 # Argument check
 if len(sys.argv) != 6:
     exit("Usage: add_sh_to_taxonomy.py <seq2sh.tsv> <SHs.tax> <tax.tsv> <blastout.tab> <outfile>")
@@ -63,15 +99,7 @@ for row in fh:
         tax = ""
         conf = 0.0
         for m in matches:
-            matchparts = m[0].split("|")
-            try:
-                new_SH = seq2sh.loc[matchparts[1]][1]
-            except KeyError:
-                print("WARNING: " + matchparts[1] + " not in seq2SH list", file=sys.stderr)
-                new_SH = ""
-            if pd.isna(new_SH):
-                print("WARNING: no SH reported for " + matchparts[1], file=sys.stderr)
-                new_SH = ""
+            new_SH = get_sh_for_match(seq2sh, m[0])
             if SH != "" and new_SH != SH:
                 SH = ""
                 tax = ""
@@ -98,7 +126,7 @@ for row in fh:
             matches = []
             matches.append([match, pid, alen])
         elif pid == maxid and alen > maxlen:
-            maxlen = pid
+            maxlen = alen
             matches = []
             matches.append([match, pid, alen])
         elif pid == maxid and alen == maxlen:
@@ -109,15 +137,7 @@ if match != "*":  # Take care of last row/ASV in match file
     tax = ""
     conf = 0.0
     for m in matches:
-        matchparts = m[0].split("|")
-        try:
-            new_SH = seq2sh.loc[matchparts[1]][1]
-        except KeyError:
-            print("WARNING: " + matchparts[1] + " not in seq2SH list", file=sys.stderr)
-            new_SH = ""
-        if pd.isna(new_SH):
-            print("WARNING: no SH reported for " + matchparts[1], file=sys.stderr)
-            new_SH = ""
+        new_SH = get_sh_for_match(seq2sh, m[0])
         if SH != "" and new_SH != SH:
             SH = ""
             tax = ""
