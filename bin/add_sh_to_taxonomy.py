@@ -18,6 +18,47 @@ import sys
 import pandas as pd
 
 
+def lookup_row(table, key):
+    """Look up a row by trying the raw key plus common string/numeric variants."""
+    candidates = [key]
+
+    if not isinstance(key, str):
+        key_str = str(key)
+        candidates.append(key_str)
+        try:
+            key_float = float(key)
+        except (TypeError, ValueError):
+            key_float = None
+        if key_float is not None and key_float.is_integer():
+            key_int = int(key_float)
+            candidates.append(key_int)
+            candidates.append(str(key_int))
+    else:
+        stripped = key.strip()
+        if stripped and stripped != key:
+            candidates.append(stripped)
+        try:
+            key_float = float(stripped)
+        except (TypeError, ValueError):
+            key_float = None
+        if key_float is not None and key_float.is_integer():
+            key_int = int(key_float)
+            candidates.append(key_int)
+            candidates.append(str(key_int))
+
+    seen = set()
+    for candidate in candidates:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        try:
+            return table.loc[candidate]
+        except KeyError:
+            continue
+
+    raise KeyError(key)
+
+
 def extract_seq_id(match_name):
     """Extract database sequence id from a vsearch match name."""
     matchparts = match_name.split("|")
@@ -31,24 +72,24 @@ def get_sh_for_match(seq2sh_table, match_name):
     """Return SH id for a match or empty string if unavailable."""
     seq_id = extract_seq_id(match_name)
     try:
-        seq_row = seq2sh_table.loc[seq_id]
+        seq_row = lookup_row(seq2sh_table, seq_id)
     except KeyError:
-        print("WARNING: " + seq_id + " not in seq2SH list", file=sys.stderr)
+        print(f"WARNING: {seq_id} not in seq2SH list", file=sys.stderr)
         return ""
 
     if isinstance(seq_row, pd.DataFrame):
         if seq_row.shape[1] <= 1 or seq_row.shape[0] == 0:
-            print("WARNING: malformed seq2SH entry for " + seq_id, file=sys.stderr)
+            print(f"WARNING: malformed seq2SH entry for {seq_id}", file=sys.stderr)
             return ""
         new_sh = seq_row.iloc[0, 1]
     else:
         if len(seq_row) <= 1:
-            print("WARNING: malformed seq2SH entry for " + seq_id, file=sys.stderr)
+            print(f"WARNING: malformed seq2SH entry for {seq_id}", file=sys.stderr)
             return ""
         new_sh = seq_row.iloc[1]
 
     if pd.isna(new_sh):
-        print("WARNING: no SH reported for " + seq_id, file=sys.stderr)
+        print(f"WARNING: no SH reported for {seq_id}", file=sys.stderr)
         return ""
 
     return new_sh
@@ -107,9 +148,9 @@ for row in fh:
             elif new_SH != "":
                 SH = new_SH
                 try:
-                    tax = list(shtax.loc[SH])
+                    tax = list(lookup_row(shtax, SH))
                 except KeyError:
-                    print("WARNING: no taxonomy found for " + SH, file=sys.stderr)
+                    print(f"WARNING: no taxonomy found for {SH}", file=sys.stderr)
                     tax = [""] * (num_ranks + 1)
                 conf = m[1] / 100.0
         if SH != "":
