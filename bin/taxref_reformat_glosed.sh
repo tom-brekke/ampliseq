@@ -139,7 +139,9 @@ if [ -s glosed.addspecies.tsv ]; then
             FS = OFS = "\t"
         }
         {
-            print ">" $2 "\n" $3
+            # DADA2 assignSpecies expects headers with at least three fields:
+            # sequence-id genus species
+            print ">" $1 " " $2 "\n" $3
         }
     ' > addSpecies.fna
 else
